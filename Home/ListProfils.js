@@ -45,9 +45,8 @@ export default function ListProfils(props) {
   };
 
   const handleSendMessage = (contact) => {
-    props.navigation.navigate("chat",{currentitem,seconditem:itempressed})
+    props.navigation.navigate("chat",{currentid,seconditem:itempressed})
     // Implement logic for sending a message
-    console.log(`Sending message to ${contact.nom} ${contact.prenom}`);
   };
 
   const handleCall = (contact) => {
@@ -104,7 +103,7 @@ export default function ListProfils(props) {
         </Dialog.Content>
         <Dialog.Actions>
           <Button> Call </Button>
-          <Button> SMS </Button>
+          <Button onPress={()=>{handleSendMessage(itempressed)}}> SMS </Button>
           <Button onPress={()=>{setDialogIsVisible(false)}}> Cancel </Button>
         </Dialog.Actions>
       </Dialog>

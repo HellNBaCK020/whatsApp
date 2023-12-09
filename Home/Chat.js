@@ -4,6 +4,8 @@ import firebase from '../Config';
 
 const Chat = (props) => {
   const { currentid } = props.route.params;
+  const { currentitem } = props.route.params;
+  const { seconditem } = props.route.params;
   const [groupData, setGroupData] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -11,16 +13,17 @@ const Chat = (props) => {
   const [typingUsers, setTypingUsers] = useState({});
 
   useEffect(() => {
-    const commonGroupRef = firebase.database().ref('commonGroup');
-
+    const commonGroupRef = firebase.database().ref('Chat');
+    console.log(currentid);
+    console.log(seconditem);
     const handleGroupData = (snapshot) => {
       const data = snapshot.val();
       setGroupData(data);
 
       if (!data) {
         commonGroupRef.set({
-          name: 'Common Group',
-          members: { [currentid]: true },
+          name: 'Chat1',
+          members: { [currentid]: true ,[seconditem.id]: true},
           messages: {},
           typing: {},
         });
@@ -38,8 +41,8 @@ const Chat = (props) => {
 
   useEffect(() => {
     if (groupData) {
-      const commonGroupMessagesRef = firebase.database().ref('commonGroup/messages');
-      const commonGroupTypingRef = firebase.database().ref('commonGroup/typing');
+      const commonGroupMessagesRef = firebase.database().ref('Chat/messages');
+      const commonGroupTypingRef = firebase.database().ref('Chat/typing');
 
       const handleMessages = async (messagesSnapshot) => {
         const messagesData = messagesSnapshot.val();
@@ -76,7 +79,7 @@ const Chat = (props) => {
       return;
     }
 
-    const commonGroupMessagesRef = firebase.database().ref('commonGroup/messages');
+    const commonGroupMessagesRef = firebase.database().ref('Chat/messages');
     const newMessageRef = commonGroupMessagesRef.push();
 
     const messageData = {
@@ -92,17 +95,17 @@ const Chat = (props) => {
   };
 
   const startTyping = () => {
-    const commonGroupTypingRef = firebase.database().ref('commonGroup/typing');
+    const commonGroupTypingRef = firebase.database().ref('Chat/typing');
     commonGroupTypingRef.child(currentid).set(true);
   };
 
   const stopTyping = () => {
-    const commonGroupTypingRef = firebase.database().ref('commonGroup/typing');
+    const commonGroupTypingRef = firebase.database().ref('Chat/typing');
     commonGroupTypingRef.child(currentid).remove();
   };
 
   const clearTypingStatus = () => {
-    const commonGroupTypingRef = firebase.database().ref('commonGroup/typing');
+    const commonGroupTypingRef = firebase.database().ref('Chat/typing');
     commonGroupTypingRef.child(currentid).remove();
   };
 
@@ -172,7 +175,7 @@ const Chat = (props) => {
           )}
         </>
       ) : (
-        <Text>Creating the group...</Text>
+        <Text>Creating Chat...</Text>
       )}
     </View>
   );
