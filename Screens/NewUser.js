@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { ImageBackground, StyleSheet, Text, View ,TextInput, Button,TouchableHighlight, TouchableOpacity} from 'react-native';
+import { ImageBackground, StyleSheet, Text, View ,TextInput, Button, TouchableOpacity} from 'react-native';
 import {useRef, useState} from 'react';
 import firebase from '../Config';
 export default function NewUser(props) {
@@ -70,7 +70,7 @@ const auth =firebase.auth();
           auth
           .createUserWithEmailAndPassword(email,password)
           .then(()=>{
-            props.navigation.navigate("home")
+            props.navigation.navigate("auth")
           })
           .catch((err)=>{
             alert(err)

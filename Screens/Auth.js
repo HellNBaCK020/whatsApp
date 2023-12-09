@@ -62,7 +62,7 @@ const auth = firebase.auth();
           .signInWithEmailAndPassword(email,password)
           .then(()=>{
             const currentid = auth.currentUser.uid
-            props.navigation.navigate("home",(currentid))   
+            props.navigation.navigate("home",{currentid})   
                  })
           .catch((err)=>{
             alert(err)

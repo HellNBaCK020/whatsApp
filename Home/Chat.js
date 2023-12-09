@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
 import firebase from '../Config';
 
-const Groupe = (props) => {
+const Chat = (props) => {
   const { currentid } = props.route.params;
   const [groupData, setGroupData] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -211,4 +211,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Groupe;
+export default Chat;

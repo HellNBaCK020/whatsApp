@@ -48,7 +48,7 @@ const uploadLocalImageToStorage = async(url) => {
   const blob = await imageToBlob(url);
 
   const ref_lesImages = storage.ref("lesimages");
-  const ref_uneimage = ref_lesImages.child("uneimage.jpg");
+  const ref_uneimage = ref_lesImages.child("uneimage.jpg"+ currentid);
   await ref_uneimage.put(blob);
   const link = await ref_uneimage.getDownloadURL(); 
   return link
@@ -130,11 +130,14 @@ const uploadLocalImageToStorage = async(url) => {
               const refProfils = database.ref('profils');
               const refUnProfil = refProfils.child("profil" + currentid);
               await refUnProfil.set({
+                id:currentid,
                 nom: nom,
                 prenom: prenom,
                 numero: numero,
                 url:link,
               });
+              alert("Saved !!")
+              props.navigation.navigate("listprofil")
             }}
           title='Save'
           ></Button>

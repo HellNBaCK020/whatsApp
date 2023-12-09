@@ -2,20 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, FlatList, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import firebase from '../Config';
+import { Button, Dialog } from 'react-native-paper';
 const database = firebase.database();
-const storage = firebase.storage();
 
-export default function ListProfils() {
+export default function ListProfils(props) {
+  const { currentid } = props.route.params;
   const [searchQuery, setSearchQuery] = useState('');
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
-
+  const [currentitem,setCurrentitem] = useState({})
+  const [dialogisvisible,setDialogIsVisible] = useState(false)
+  const [itempressed,setItemPressed] = useState({})
   const ref_profils = database.ref("profils");
 
   useEffect(() => {
     ref_profils.on("value", (snapshot) => {
       var d = [];
       snapshot.forEach((un_profil) => {
+        if(un_profil.val().id ==currentid)
+          setCurrentitem(un_profil.val())
+        else
         d.push(un_profil.val());
       });
       setData(d);
@@ -39,6 +45,7 @@ export default function ListProfils() {
   };
 
   const handleSendMessage = (contact) => {
+    props.navigation.navigate("chat",{currentitem,seconditem:itempressed})
     // Implement logic for sending a message
     console.log(`Sending message to ${contact.nom} ${contact.prenom}`);
   };
@@ -51,15 +58,18 @@ export default function ListProfils() {
   const renderProfile = ({ item }) => (
     <View style={styles.profileItem}>
       <View style={styles.profileImageContainer}>
+        <TouchableOpacity onPress={()=>{
+          setDialogIsVisible(true)
+          setItemPressed(item)}}>
         <Image
           source={{ uri: item.url}}
           style={styles.profileImage}
         />
+        </TouchableOpacity>
       </View>
       <View style={styles.profileInfo}>
         <Text>{`${item.nom} ${item.prenom}`}</Text>
         <Text>{`Numero: ${item.numero}`}</Text>
-        {/* Additional details or properties can be displayed here */}
       </View>
       <View style={styles.actionButtons}>
         <TouchableOpacity onPress={() => handleCall(item)}>
@@ -86,6 +96,18 @@ export default function ListProfils() {
         keyExtractor={(item, index) => index.toString()}
         renderItem={renderProfile}
       />
+      <Dialog visible={dialogisvisible}
+      onDismiss={()=>{setDialogIsVisible(false)}}>
+        <Dialog.Title>Detail du profil</Dialog.Title>
+        <Dialog.Content>
+          <Text>{itempressed.nom + itempressed.prenom}</Text>
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button> Call </Button>
+          <Button> SMS </Button>
+          <Button onPress={()=>{setDialogIsVisible(false)}}> Cancel </Button>
+        </Dialog.Actions>
+      </Dialog>
     </View>
   );
 }
