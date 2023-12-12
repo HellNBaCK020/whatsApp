@@ -4,45 +4,57 @@ import firebase from '../Config';
 
 const Chat = (props) => {
   const { currentid } = props.route.params;
-  const { currentitem } = props.route.params;
   const { seconditem } = props.route.params;
   const [groupData, setGroupData] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [senderNames, setSenderNames] = useState({});
   const [typingUsers, setTypingUsers] = useState({});
-
+  const [Chatid,setChatid] = useState("")
+  const setChatidentification = async () => {
+    if(currentid<seconditem.id)
+     setChatid(currentid+seconditem.id)
+  else
+     setChatid(seconditem.id+currentid)
+  }
+  
   useEffect(() => {
-    const commonGroupRef = firebase.database().ref('Chat');
-    console.log(currentid);
-    console.log(seconditem);
-    const handleGroupData = (snapshot) => {
-      const data = snapshot.val();
-      setGroupData(data);
+    const setChatIdAndInitializeChat = async () => {
+      setChatidentification();
+      await new Promise(resolve => setTimeout(resolve, 500)); 
 
-      if (!data) {
-        commonGroupRef.set({
-          name: 'Chat1',
-          members: { [currentid]: true ,[seconditem.id]: true},
-          messages: {},
-          typing: {},
-        });
-      } else if (!data.members || !data.members[currentid]) {
-        commonGroupRef.child('members').update({ [currentid]: true });
+      if (Chatid) {
+        const Allgroupref = firebase.database().ref('Chats');
+        const commonGroupRef = Allgroupref.child(`Chat${Chatid}`);
+
+        const handleGroupData = (snapshot) => {
+          const data = snapshot.val();
+          setGroupData(data);
+
+          if (!data) {
+            commonGroupRef.set({
+              members: { [currentid]: true, [seconditem.id]: true },
+              messages: {},
+              typing: {},
+            });
+          }
+        };
+
+        commonGroupRef.on('value', handleGroupData);
+
+        return () => {
+          commonGroupRef.off('value', handleGroupData);
+        };
       }
     };
 
-    commonGroupRef.on('value', handleGroupData);
-
-    return () => {
-      commonGroupRef.off('value', handleGroupData);
-    };
-  }, [currentid]);
+    setChatIdAndInitializeChat();
+  }, [Chatid, currentid, seconditem.id]);
 
   useEffect(() => {
     if (groupData) {
-      const commonGroupMessagesRef = firebase.database().ref('Chat/messages');
-      const commonGroupTypingRef = firebase.database().ref('Chat/typing');
+      const commonGroupMessagesRef = firebase.database().ref(`Chats/Chat${Chatid}/messages`);
+      const commonGroupTypingRef = firebase.database().ref(`Chats/Chat${Chatid}/typing`);
 
       const handleMessages = async (messagesSnapshot) => {
         const messagesData = messagesSnapshot.val();
@@ -79,7 +91,7 @@ const Chat = (props) => {
       return;
     }
 
-    const commonGroupMessagesRef = firebase.database().ref('Chat/messages');
+    const commonGroupMessagesRef = firebase.database().ref(`Chats/Chat${Chatid}/messages`);
     const newMessageRef = commonGroupMessagesRef.push();
 
     const messageData = {
@@ -95,17 +107,17 @@ const Chat = (props) => {
   };
 
   const startTyping = () => {
-    const commonGroupTypingRef = firebase.database().ref('Chat/typing');
+    const commonGroupTypingRef = firebase.database().ref(`Chats/Chat${Chatid}/typing`);
     commonGroupTypingRef.child(currentid).set(true);
   };
 
   const stopTyping = () => {
-    const commonGroupTypingRef = firebase.database().ref('Chat/typing');
+    const commonGroupTypingRef = firebase.database().ref(`Chats/Chat${Chatid}/typing`);
     commonGroupTypingRef.child(currentid).remove();
   };
 
   const clearTypingStatus = () => {
-    const commonGroupTypingRef = firebase.database().ref('Chat/typing');
+    const commonGroupTypingRef = firebase.database().ref(`Chats/Chat${Chatid}/typing`);
     commonGroupTypingRef.child(currentid).remove();
   };
 
