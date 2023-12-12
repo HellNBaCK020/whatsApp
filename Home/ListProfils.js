@@ -44,8 +44,9 @@ export default function ListProfils(props) {
     setFilteredData(filtered);
   };
 
-  const handleSendMessage = (contact) => {
-    props.navigation.navigate("chat",{currentid,seconditem:itempressed})
+  const handleSendMessage = (item) => {
+    setItemPressed(item)
+    props.navigation.navigate("chat",{currentid,seconditem:item})
     // Implement logic for sending a message
   };
 
@@ -96,7 +97,9 @@ export default function ListProfils(props) {
         renderItem={renderProfile}
       />
       <Dialog visible={dialogisvisible}
-      onDismiss={()=>{setDialogIsVisible(false)}}>
+      onDismiss={()=>{
+        setDialogIsVisible(false)
+        setItemPressed({})}}>
         <Dialog.Title>Detail du profil</Dialog.Title>
         <Dialog.Content>
           <Text>{itempressed.nom + itempressed.prenom}</Text>
@@ -104,7 +107,10 @@ export default function ListProfils(props) {
         <Dialog.Actions>
           <Button> Call </Button>
           <Button onPress={()=>{handleSendMessage(itempressed)}}> SMS </Button>
-          <Button onPress={()=>{setDialogIsVisible(false)}}> Cancel </Button>
+          <Button onPress={()=>{
+            setDialogIsVisible(false)
+            setItemPressed({})
+            }}> Cancel </Button>
         </Dialog.Actions>
       </Dialog>
     </View>
