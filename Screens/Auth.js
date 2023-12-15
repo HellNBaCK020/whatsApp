@@ -7,6 +7,7 @@ const [email ,setmail] = useState ("Aymen@gmail.com");
 const [password ,setPwd] = useState ("submit");
 const refinput2 = useRef ();
 const auth = firebase.auth();
+const database = firebase.database();
 
   return (
     <View style={styles.container}>
@@ -60,8 +61,30 @@ const auth = firebase.auth();
       onPress  = {()=> {
         auth
           .signInWithEmailAndPassword(email,password)
-          .then(()=>{
+          .then(async()=>{
             const currentid = auth.currentUser.uid
+            const refProfils = database.ref('profils');
+            const profileRef = refProfils.child("profil" + currentid);
+            const profileSnapshot = await profileRef.once('value');
+            const profileExists = profileSnapshot.exists();
+
+            if (profileExists) {
+            profileRef.update({
+            isOnline: true,
+            });
+            } else {
+            const userProfile = {
+              nom: "",
+              prenom: "",
+              numero: "",
+              url:"",
+              id: currentid,
+              isOnline: true,
+            };
+
+            profileRef.set(userProfile);
+}
+
             props.navigation.navigate("home",{currentid})   
                  })
           .catch((err)=>{

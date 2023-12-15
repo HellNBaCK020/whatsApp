@@ -28,6 +28,9 @@ export default function ListProfils(props) {
       setFilteredData(d);
     });
     return () => {
+      ref_profils.child("profil" + currentid).update({
+        isOnline:false,
+      }) 
       ref_profils.off();
     };
   }, []);
@@ -47,24 +50,26 @@ export default function ListProfils(props) {
   const handleSendMessage = (item) => {
     setItemPressed(item)
     props.navigation.navigate("chat",{currentid,seconditem:item})
-    // Implement logic for sending a message
   };
 
   const handleCall = (contact) => {
-    // Implement logic for making a call
     console.log(`Calling ${contact.nom} ${contact.prenom} at ${contact.numero}`);
   };
 
   const renderProfile = ({ item }) => (
     <View style={styles.profileItem}>
       <View style={styles.profileImageContainer}>
-        <TouchableOpacity onPress={()=>{
-          setDialogIsVisible(true)
-          setItemPressed(item)}}>
-        <Image
-          source={{ uri: item.url}}
-          style={styles.profileImage}
-        />
+        <TouchableOpacity onPress={() => {
+          setDialogIsVisible(true);
+          setItemPressed(item);
+        }}>
+          <Image
+            source={{ uri: item.url }}
+            style={styles.profileImage}
+          />
+          {item.isOnline && (
+            <View style={styles.onlineIndicator} />
+          )}
         </TouchableOpacity>
       </View>
       <View style={styles.profileInfo}>
@@ -81,6 +86,7 @@ export default function ListProfils(props) {
       </View>
     </View>
   );
+  
 
   return (
     <View style={styles.container}>
@@ -102,7 +108,7 @@ export default function ListProfils(props) {
         setItemPressed({})}}>
         <Dialog.Title>Detail du profil</Dialog.Title>
         <Dialog.Content>
-          <Text>{itempressed.nom + itempressed.prenom}</Text>
+          <Text>{itempressed.nom +" "+ itempressed.prenom}</Text>
         </Dialog.Content>
         <Dialog.Actions>
           <Button> Call </Button>
@@ -154,5 +160,16 @@ const styles = StyleSheet.create({
     margin: 5  },
   icon:{
     marginRight : 10,
+  },
+  onlineIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'green',
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    borderWidth: 2,
+    borderColor: 'white',
   },
 });

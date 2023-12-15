@@ -128,14 +128,13 @@ const uploadLocalImageToStorage = async(url) => {
                link = await uploadLocalImageToStorage(urllocal)
             }
               const refProfils = database.ref('profils');
-              const refUnProfil = refProfils.child("profil" + currentid);
-              await refUnProfil.set({
+              const refUnProfil = refProfils.child("profil" + currentid).update({
                 id:currentid,
                 nom: nom,
                 prenom: prenom,
                 numero: numero,
-                url:link,
-              });
+                isOnline :true,
+                url:link,})
               alert("Saved !!")
               props.navigation.navigate("listprofil")
             }}

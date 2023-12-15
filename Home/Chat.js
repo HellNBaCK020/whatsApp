@@ -1,8 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, FlatList, StyleSheet,TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome'; 
+import * as DocumentPicker from 'expo-document-picker';
+import { Linking } from 'react-native';
+import { Image } from 'react-native';
+import { Audio } from 'expo-av';
 import firebase from '../Config';
-
+import ChatHeader from './ChatHeader';
+const openPDF = (documentURL) => {
+  Linking.openURL(documentURL);
+};
+const isImageFile = (fileName) => {
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif']; 
+  const extension = fileName.substr(fileName.lastIndexOf('.')).toLowerCase();
+  return imageExtensions.includes(extension);
+};
 const Chat = (props) => {
+  const [recording, setRecording] = useState();
+  const [sound, setSound] = useState();
+  const [isRecording, setIsRecording] = useState(false);
   const { currentid } = props.route.params;
   const { seconditem } = props.route.params;
   const [groupData, setGroupData] = useState(null);
@@ -11,6 +27,135 @@ const Chat = (props) => {
   const [senderNames, setSenderNames] = useState({});
   const [typingUsers, setTypingUsers] = useState({});
   const [Chatid,setChatid] = useState("")
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  async function startRecording() {
+    try {
+      console.log('Requesting permissions..');
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      console.log('Starting recording..');
+      const { recording } = await Audio.Recording.createAsync( Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
+      console.log('Recording started');
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
+  }
+
+  async function stopRecording() {
+    try {
+      console.log('Stopping recording..');
+      setRecording(undefined);
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+      });
+      
+      const uri = recording.getURI();
+      console.log('Recording stopped and stored at', uri);
+      const response = await fetch(uri);
+      const blob = await response.blob();
+  
+      const storageRef = firebase.storage().ref().child(`audio/${new Date().toISOString()}.aac`);
+      await storageRef.put(blob);
+  
+      const downloadURL = await storageRef.getDownloadURL();
+      console.log('Audio uploaded to Firebase Storage:', downloadURL);
+  
+      const commonGroupMessagesRef = firebase.database().ref(`Chats/Chat${Chatid}/messages`);
+      const newMessageRef = commonGroupMessagesRef.push();
+  
+      const messageData = {
+        sender: currentid,
+        timestamp: new Date().getTime(),
+        audioURL: downloadURL,
+      };
+  
+      newMessageRef.set(messageData);
+  
+    } catch (err) {
+      console.error('Failed to stop recording', err);
+    }
+  }
+  async function playSound( url ) {
+    console.log('Loading Sound');
+    const { sound } = await Audio.Sound.createAsync(
+      { uri: url },
+     { shouldPlay: true }
+    );
+    setSound(sound);
+
+    console.log('Playing Sound');
+    await sound.playAsync();
+  }
+
+  React.useEffect(() => {
+    return sound
+      ? () => {
+          console.log('Unloading Sound');
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+  const pickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({});
+      console.log(result);
+  
+      if (result.assets !== null) {
+        setSelectedDocument(result);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  useEffect(() => {
+    const uploadDocument = async () => {
+      if (selectedDocument && selectedDocument.assets !== null) {
+        await uploadDocumentToFirebase();
+      }
+    };
+  
+    uploadDocument();
+  }, [selectedDocument]);
+  const uploadDocumentToFirebase = async () => {
+    if (!selectedDocument) {
+      console.log('No document selected.');
+      return;
+    }
+    const { uri, name } = selectedDocument.assets[0];
+    const response = await fetch(uri);
+    const blob = await response.blob();
+
+    const storageRef = firebase.storage().ref().child(`documents/${name}`);
+    await storageRef.put(blob);
+
+    const downloadURL = await storageRef.getDownloadURL();
+    console.log('Document uploaded to Firebase Storage:', downloadURL);
+
+    const commonGroupMessagesRef = firebase.database().ref(`Chats/Chat${Chatid}/messages`);
+    const newMessageRef = commonGroupMessagesRef.push();
+
+    const messageData = {
+      text: newMessage,
+      sender: currentid,
+      timestamp: new Date().getTime(),
+      documentURL: downloadURL, 
+      documentName : name,
+    };
+
+    newMessageRef.set(messageData);
+
+    clearTypingStatus();
+    setNewMessage('');
+    setSelectedDocument(null); 
+  };
+
   const setChatidentification = async () => {
     if(currentid<seconditem.id)
      setChatid(currentid+seconditem.id)
@@ -142,6 +287,7 @@ const Chat = (props) => {
     <View style={styles.container}>
       {groupData ? (
         <>
+        <ChatHeader user={seconditem} />
           <FlatList
             data={messages}
             keyExtractor={(item) => item.timestamp.toString()}
@@ -154,13 +300,57 @@ const Chat = (props) => {
                     backgroundColor: item.sender === currentid ? '#C3E6F5' : '#87CEEB',
                   },
                 ]}
-              >
+              >{item.documentURL ? (
+                isImageFile(item.documentName) ? (
+                  <TouchableOpacity onPress={() => openPDF(item.documentURL)}>
+                  <View>
+                    <Text style={styles.senderText}>{senderNames[item.sender]}</Text>
+                    {item.text !== '' && <Text style={styles.messageText}>{item.text}</Text>}
+                    <Image
+                    source={{ uri: item.documentURL }}
+                    style={{ width: 200, height: 200 }} 
+                  />
+                    <Text style={styles.timestampText}>
+                      {new Date(item.timestamp).toLocaleString()}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                ) : (
+                <TouchableOpacity onPress={() => openPDF(item.documentURL)}>
+                  <View>
+                    <Text style={styles.senderText}>{senderNames[item.sender]}</Text>
+                    {item.text !== '' && <Text style={styles.messageText}>{item.text}</Text>}
+                    <Text style={{ color: 'blue', textDecorationLine: 'underline' }}>
+                      {item.documentName}
+                    </Text>
+                    <Text style={styles.timestampText}>
+                      {new Date(item.timestamp).toLocaleString()}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )
+              )  : item.audioURL ? (
+                <TouchableOpacity >
+                  <View>
+                    <Text style={styles.senderText}>{senderNames[item.sender]}</Text>
+                    <TouchableOpacity onPress={() => playSound(item.audioURL)} >
+                      < Icon name="play-circle" size={30} color="#333" />
+                    </TouchableOpacity>
+                    <Text style={styles.timestampText}>
+                      {new Date(item.timestamp).toLocaleString()}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                  <View>
                 <Text style={styles.senderText}>{senderNames[item.sender]}</Text>
                 <Text style={styles.messageText}>{item.text}</Text>
                 <Text style={styles.timestampText}>
                   {new Date(item.timestamp).toLocaleString()}
                 </Text>
               </View>
+            )}
+                          </View>
             )}
           />
           <TextInput
@@ -177,7 +367,23 @@ const Chat = (props) => {
             }}
             onBlur={() => stopTyping()}
           />
-          <Button title="Send" onPress={sendMessage} />
+            <View style={styles.buttonContainer}>
+            <TouchableOpacity  style={styles.sendButton}>
+              <Button title="Send" onPress={sendMessage} />
+            </TouchableOpacity>
+            {recording ? (
+              <TouchableOpacity onPress={stopRecording} style={styles.iconContainer}>
+                <Icon name="stop-circle" size={30} color="#FF0000" />
+              </TouchableOpacity>
+              ) : (
+              <TouchableOpacity onPress={startRecording} style={styles.iconContainer}>
+                <Icon name="microphone" size={30} color="#333" />
+              </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={pickDocument} style={styles.iconContainer}>
+                <Icon name="file" size={23} color="#333" />
+              </TouchableOpacity>
+            </View>
           {Object.keys(typingUsers).length > 0 && !typingUsers[currentid] && (
             <Text>{`${Object.keys(typingUsers)
               .map(id => senderNames[id])
@@ -195,6 +401,29 @@ const Chat = (props) => {
 };
 
 const styles = StyleSheet.create({
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+
+  sendButton: {
+    flex: 0.9,
+    marginRight: 8,
+    width: 500 ,
+    paddingVertical: 6,
+  },
+
+  iconContainer: {
+    flex: 0.1,
+    paddingHorizontal: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e0e0e0',
+    padding: 10,
+    borderRadius: 8,
+    marginLeft:5
+    },
   container: {
     flex: 1,
     padding: 16,
