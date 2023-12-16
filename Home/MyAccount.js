@@ -136,7 +136,7 @@ const uploadLocalImageToStorage = async(url) => {
                 isOnline :true,
                 url:link,})
               alert("Saved !!")
-              props.navigation.navigate("listprofil")
+              props.navigation.navigate("Contacts")
             }}
           title='Save'
           ></Button>

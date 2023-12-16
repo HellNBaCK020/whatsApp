@@ -4,6 +4,7 @@ import ListProfils from '../Home/ListProfils';
 import Groupe from '../Home/Groupe';
 import MyAccount from '../Home/MyAccount';
 import { AppState } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
 import firebase from '../Config';
 const database = firebase.database();
 const Tab = createMaterialBottomTabNavigator();
@@ -32,9 +33,21 @@ export default function Home(props) {
       }, [appState]);
 return(
 <Tab.Navigator screenOptions={{headerShown : false }}>
-    <Tab.Screen initialParams={{currentid}} name ="listprofil" component={ListProfils}></Tab.Screen>
-    <Tab.Screen initialParams={{currentid}} name ="groupe" component={Groupe}></Tab.Screen>
-    <Tab.Screen initialParams={{currentid}} name ="myaccount" component={MyAccount}></Tab.Screen>
+    <Tab.Screen initialParams={{currentid}} name ="Contacts" component={ListProfils}options={{
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="users" size={30} color={color} />
+          ),
+        }}></Tab.Screen>
+    <Tab.Screen initialParams={{currentid}} name ="Group Chat" component={Groupe}options={{
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="comments" size={30} color={color} />
+          ),
+        }}></Tab.Screen>
+    <Tab.Screen initialParams={{currentid}} name ="My Account" component={MyAccount}options={{
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="user" size={30} color={color} />
+          ),
+        }}></Tab.Screen>
 </Tab.Navigator>
 )};
 

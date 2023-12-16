@@ -3,6 +3,7 @@ import { View, Text, TextInput, FlatList, Image, StyleSheet, TouchableOpacity } 
 import Icon from 'react-native-vector-icons/FontAwesome';
 import firebase from '../Config';
 import { Button, Dialog } from 'react-native-paper';
+import { Linking } from 'react-native';
 const database = firebase.database();
 
 export default function ListProfils(props) {
@@ -53,7 +54,21 @@ export default function ListProfils(props) {
   };
 
   const handleCall = (contact) => {
-    console.log(`Calling ${contact.nom} ${contact.prenom} at ${contact.numero}`);
+    const phoneNumber = contact.numero;
+      if (!phoneNumber) {
+      console.log('Invalid phone number');
+      return;
+    }
+      const phoneDialerUrl = `tel:${phoneNumber}`;
+      Linking.canOpenURL(phoneDialerUrl)
+      .then((supported) => {
+        if (supported) {
+          return Linking.openURL(phoneDialerUrl);
+        } else {
+          console.log('Phone dialer not supported');
+        }
+      })
+      .catch((error) => console.error('Error opening phone dialer', error));
   };
 
   const renderProfile = ({ item }) => (

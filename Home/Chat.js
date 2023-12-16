@@ -302,7 +302,7 @@ const Chat = (props) => {
                 ]}
               >{item.documentURL ? (
                 isImageFile(item.documentName) ? (
-                  <TouchableOpacity onPress={() => openPDF(item.documentURL)}>
+                  <TouchableOpacity >
                   <View>
                     <Text style={styles.senderText}>{senderNames[item.sender]}</Text>
                     {item.text !== '' && <Text style={styles.messageText}>{item.text}</Text>}
